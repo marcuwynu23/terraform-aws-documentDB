@@ -158,6 +158,29 @@ docdb_instance_endpoint
 
 ---
 
+## Usage as a Module
+
+Reference this repository as a Terraform module in your own configurations:
+
+```hcl
+module "documentdb" {
+  source = "github.com/marcuwynu23/terraform-aws-documentDB?ref=main"
+}
+```
+
+Then use the outputs in your configuration:
+
+```hcl
+# Example: pass the cluster endpoint to an application config
+output "db_endpoint" {
+  value = module.documentdb.docdb_cluster_endpoint
+}
+```
+
+All outputs documented below are available when using this as a module.
+
+---
+
 ## Connection Details
 
 DocumentDB uses MongoDB-compatible protocol.
