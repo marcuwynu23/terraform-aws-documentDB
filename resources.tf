@@ -67,7 +67,7 @@ resource "aws_docdb_cluster" "my_docdb_cluster" {
   storage_encrypted = true # Enable encryption at rest
 
   # Ensure the cluster is created in the same VPC (implicitly done through security group)
-  
+
 }
 
 # Create the DocumentDB Instance
