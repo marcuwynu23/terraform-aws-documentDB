@@ -5,7 +5,7 @@ resource "random_id" "docdb_cluster_id" {
 
 # Create a VPC (if you don't already have one)
 resource "aws_vpc" "my_vpc" {
-  cidr_block           = "10.0.0.0/16" # Replace with your desired CIDR block
+  cidr_block           = var.vpc_cidr_block
   enable_dns_support   = true
   enable_dns_hostnames = true
 
@@ -25,7 +25,7 @@ resource "aws_security_group" "docdb_sg" {
     from_port   = 27017
     to_port     = 27017
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Allow access from anywhere (can restrict as needed)
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   # Allow all outbound traffic
@@ -43,20 +43,19 @@ resource "aws_security_group" "docdb_sg" {
 
 # Create the DocumentDB Cluster in the same VPC
 resource "aws_docdb_cluster" "my_docdb_cluster" {
-  cluster_identifier  = "my-docdb-cluster-${random_id.docdb_cluster_id.hex}" # Unique cluster identifier
-  engine              = "docdb"                                              # Engine type (DocumentDB)
-  master_username     = "admin"                                              # The username for the database
-  master_password     = "your-password-here"                                 # The password for the database (store securely)
-  skip_final_snapshot = true                                                 # Skip final snapshot on delete (optional)
+  cluster_identifier  = "${var.cluster_identifier_prefix}${random_id.docdb_cluster_id.hex}"
+  engine              = "docdb"
+  master_username     = var.master_username
+  master_password     = var.master_password
+  skip_final_snapshot = true
 
-  # Backup configuration
-  backup_retention_period = 7             # Retain backups for 7 days (adjust as needed)
-  preferred_backup_window = "07:00-09:00" # Time window for backups (optional)
+  backup_retention_period = var.backup_retention_period
+  preferred_backup_window = "07:00-09:00"
 
   # Tags
   tags = {
     Name        = "MyDocumentDBCluster"
-    Environment = "Production"
+    Environment = var.environment
   }
 
   # VPC security group IDs (use the correct security group ID here)
@@ -73,12 +72,12 @@ resource "aws_docdb_cluster" "my_docdb_cluster" {
 # Create the DocumentDB Instance
 resource "aws_docdb_cluster_instance" "my_docdb_instance" {
   cluster_identifier = aws_docdb_cluster.my_docdb_cluster.cluster_identifier # Link to the DocumentDB cluster
-  instance_class     = "db.r5.large"                                         # Instance class (adjust as needed)
+  instance_class     = var.instance_class
   engine             = "docdb"
-  identifier         = "my-docdb-instance-${random_id.docdb_cluster_id.hex}" # Unique instance identifier
+  identifier         = "${var.instance_identifier_prefix}${random_id.docdb_cluster_id.hex}"
 
   tags = {
     Name        = "MyDocumentDBInstance"
-    Environment = "Production"
+    Environment = var.environment
   }
 }
