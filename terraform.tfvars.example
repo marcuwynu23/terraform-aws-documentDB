@@ -1,0 +1,9 @@
+vpc_cidr_block            = "10.0.0.0/16"
+cluster_identifier_prefix = "my-docdb-cluster-"
+instance_identifier_prefix = "my-docdb-instance-"
+master_username           = "admin"
+master_password           = "your-strong-password-here"
+instance_class            = "db.r5.large"
+backup_retention_period   = 7
+allowed_cidr_blocks       = ["10.0.0.0/8", "192.168.0.0/16"]
+environment               = "Production"
