@@ -100,6 +100,80 @@ Example connection string:
 mongodb://admin:your-password-here@<cluster-endpoint>:27017/?ssl=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false
 ```
 
+## Resources Created
+
+- `random_id.docdb_cluster_id` – Random ID for unique resource naming
+- `aws_vpc.my_vpc` – VPC for the DocumentDB cluster
+- `aws_security_group.docdb_sg` – Security group for DocumentDB access
+- `aws_docdb_cluster.my_docdb_cluster` – DocumentDB cluster (MongoDB compatible)
+- `aws_docdb_cluster_instance.my_docdb_instance` – DocumentDB instance
+
+## Remote State Management (S3 Backend)
+
+This module uses AWS S3 as the Terraform backend for remote state management with DynamoDB for state locking.
+
+### Create the Backend Resources
+
+Run the following commands once per AWS account to create the bucket and lock table:
+
+```bash
+# Create S3 bucket for Terraform state
+aws s3api create-bucket \
+  --bucket your-terraform-state-bucket \
+  --region ap-southeast-1 \
+  --create-bucket-configuration LocationConstraint=ap-southeast-1
+
+# Enable versioning on the bucket
+aws s3api put-bucket-versioning \
+  --bucket your-terraform-state-bucket \
+  --versioning-configuration Status=Enabled
+
+# Create DynamoDB table for state locking
+aws dynamodb create-table \
+  --table-name terraform-state-lock \
+  --attribute-definitions AttributeName=LockID,AttributeType=S \
+  --key-schema AttributeName=LockID,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST \
+  --region ap-southeast-1
+```
+
+### Configure the Backend
+
+Create a `backend.tfvars` file:
+
+```hcl
+bucket         = "your-terraform-state-bucket"
+key            = "documentdb/terraform.tfstate"
+region         = "ap-southeast-1"
+dynamodb_table = "terraform-state-lock"
+encrypt        = true
+```
+
+Initialize with the backend config:
+
+```bash
+terraform init -backend-config="backend.tfvars"
+```
+
+### GitHub Actions CI/CD
+
+Two workflows are available for automated deployment:
+
+| Workflow | Description |
+|----------|-------------|
+| `terraform-cd-apply.yml` | Plan and provision infrastructure |
+| `terraform-cd-destroy.yml` | Tear down infrastructure |
+
+#### Required GitHub Secrets
+
+| Secret | Description |
+|--------|-------------|
+| `AWS_ACCESS_KEY_ID` | AWS access key ID |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret access key |
+| `TF_STATE_BUCKET` | S3 bucket name for Terraform state |
+| `TF_STATE_REGION` | AWS region for the state bucket |
+| `TF_STATE_LOCK_TABLE` | DynamoDB table for state locking |
+
 ## Common Issues
 
 ### Cannot connect to cluster
